@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchLyrics, fmt } from '../api';
-import { Close, Play, Pause } from './Icons';
+import { Close } from './Icons';
 import useSettings, { updateSettings } from '../useSettings';
 
 function parseLrc(lrc) {
@@ -117,16 +117,6 @@ export default function LyricsView({ open, track, yt, onClose, onArtist }) {
           <span>Fermer</span>
         </button>
         <div className="lv-controls">
-          <button
-            type="button"
-            className="lv-play-btn"
-            onClick={yt.toggle}
-            aria-label={yt.playing ? 'Mettre en pause' : 'Lire'}
-            title={yt.playing ? 'Pause' : 'Lecture'}
-          >
-            {yt.playing ? <Pause size={14} /> : <Play size={14} />}
-            <span>{yt.playing ? 'Pause' : 'Lecture'}</span>
-          </button>
           <div className="lv-anim-switch" role="group" aria-label="Animation des paroles">
             <button
               type="button"

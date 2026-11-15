@@ -86,9 +86,17 @@ export default function Player({ track, yt, onPrev, onNext, hasNext, panel, onPa
       <div className="pl-center">
         <div className="pl-ctrls">
           <button className="pl-btn" onClick={onPrev} disabled={!track} aria-label="Précédent"><Prev /></button>
-          <button className={`pl-play${yt.buffering ? ' loading' : ''}`} onClick={yt.toggle} disabled={!track}
-            aria-label={yt.playing ? 'Pause' : 'Lecture'}>
-            {yt.playing ? <Pause size={22} /> : <Play size={22} />}
+          <button
+            className={`pl-play${yt.playing ? ' is-playing' : ''}${yt.buffering ? ' loading' : ''}`}
+            onClick={yt.toggle}
+            disabled={!track}
+            aria-label={yt.playing ? 'Pause' : 'Lecture'}
+          >
+            <span className="pl-play-ring" aria-hidden="true" />
+            <span className="pl-play-morph" aria-hidden="true">
+              <span className="pl-ico pl-ico-play"><Play size={20} /></span>
+              <span className="pl-ico pl-ico-pause"><Pause size={20} /></span>
+            </span>
           </button>
           <button className="pl-btn" onClick={onNext} disabled={!hasNext} aria-label="Suivant"><Next /></button>
         </div>

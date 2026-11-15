@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { fmt, prefetch } from '../api';
-import { Play, Eq, Heart, Plus } from './Icons';
+import { Play, Eq, Heart, Plus, Trash } from './Icons';
 import useList, { openPlaylistPicker } from '../useList';
 
-export default function TrackList({ tracks, currentId, playing, onPick, onReorder, loading }) {
+export default function TrackList({ tracks, currentId, playing, onPick, onReorder, onRemove, loading }) {
   const { has, toggle } = useList();
   const [drag, setDrag] = useState(null); // { idx, over, x, y, ox, oy, w, tilt }
   const listRef = useRef(null);
@@ -79,7 +79,7 @@ export default function TrackList({ tracks, currentId, playing, onPick, onReorde
 
   return (
     <>
-      <ol ref={listRef} className={`tracks${onReorder ? ' reorderable' : ''}${drag ? ' is-dragging' : ''}`}>
+      <ol ref={listRef} className={`tracks${onReorder ? ' reorderable' : ''}${onRemove ? ' removable' : ''}${drag ? ' is-dragging' : ''}`}>
         {tracks.map((t, i) => {
           const cur = t.id === currentId;
           const isSource = drag?.idx === i;
@@ -90,7 +90,7 @@ export default function TrackList({ tracks, currentId, playing, onPick, onReorde
               data-idx={i}
               className={`${isSource ? 'drag-slot' : ''}${isOver ? ' drop-over' : ''}`}
               onPointerDown={onReorder ? e => {
-                if (e.button !== 0 || e.target.closest('.like, .track-add')) return;
+                if (e.button !== 0 || e.target.closest('.like, .track-add, .track-trash')) return;
                 const r = e.currentTarget.getBoundingClientRect();
                 holdRef.current = {
                   idx: i, over: i, active: false,
@@ -111,6 +111,11 @@ export default function TrackList({ tracks, currentId, playing, onPick, onReorde
                 </div>
                 <span className="track-dur">{fmt(t.duration)}</span>
               </button>
+              {onRemove && (
+                <button className="track-trash" onClick={() => onRemove(i)} aria-label="Retirer de la playlist" title="Retirer de la playlist">
+                  <Trash size={15} />
+                </button>
+              )}
               <button className="track-add" onClick={() => openPlaylistPicker(t)} aria-label="Ajouter à une playlist" title="Ajouter à une playlist / J'aime">
                 <Plus size={15} />
               </button>

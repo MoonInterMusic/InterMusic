@@ -46,7 +46,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [eqOpen, setEqOpen] = useState(false);
   const [openPlId, setOpenPlId] = useState(null);
-  const { items: liked, has, toggle, reorderTracks, reorderPlaylist } = useList();
+  const { items: liked, has, toggle, reorderTracks, reorderPlaylist, removeFromPlaylist } = useList();
   const openPl = openPlId ? liked.playlist.find(p => p.id === openPlId) || null : null;
   const toastTimer = useRef(null);
   const videoRef = useRef(null);
@@ -212,7 +212,8 @@ export default function App() {
         </header>
         <TrackList tracks={openPl.tracks} currentId={current?.id} playing={yt.playing}
           onPick={i => playAt(openPl.tracks, i)}
-          onReorder={(from, to) => reorderPlaylist(openPl.id, from, to)} />
+          onReorder={(from, to) => reorderPlaylist(openPl.id, from, to)}
+          onRemove={i => { removeFromPlaylist(openPl.id, i); showToast('Titre retiré de la playlist'); }} />
       </main>
       ) : view === 'liste' ? (
       <main className="view">

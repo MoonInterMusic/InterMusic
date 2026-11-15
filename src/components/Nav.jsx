@@ -95,15 +95,15 @@ export default function Nav({ onPick, onPlayTrack, onArtist, onHome, onList, onI
         <div className="nav-label">Catalogue</div>
         <div className="nav-links">
           {LINKS.map(([id, label, icon]) => (
-            <button key={id} className={`nav-link${active === id ? ' active' : ''}`} onClick={() => go(id)}>
+            <button key={id} className={`nav-link${active === id ? ' active' : ''}`} onClick={() => go(id)} title={label}>
               {icon}<span>{label}</span>
             </button>
           ))}
         </div>
-        <button className="nav-import" onClick={onImport}>
+        <button className="nav-import" onClick={onImport} title="Importer une playlist">
           {ic(<><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></>)}<span>Importer une playlist</span>
         </button>
-        <button className="nav-import nav-settings" onClick={onSettings}>
+        <button className="nav-import nav-settings" onClick={onSettings} title="Paramètres">
           {ic(<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.77 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></>)}<span>Paramètres</span>
         </button>
         <div className="nav-note">InterMusic · v{version}</div>

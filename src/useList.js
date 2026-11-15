@@ -70,6 +70,16 @@ function toggleInPlaylist(plId, track) {
   return added;
 }
 
+function removeFromPlaylist(plId, idx) {
+  list = {
+    ...list,
+    playlist: list.playlist.map(p =>
+      p.id === plId ? { ...p, tracks: p.tracks.filter((_, i) => i !== idx) } : p
+    ),
+  };
+  save();
+}
+
 export function openPlaylistPicker(track) {
   if (track) window.dispatchEvent(new CustomEvent('intermusic-pick-playlist', { detail: track }));
 }
@@ -78,5 +88,5 @@ const subscribe = f => (subs.add(f), () => subs.delete(f));
 
 export default function useList() {
   const items = useSyncExternalStore(subscribe, () => list);
-  return { items, has, toggle, reorderTracks, reorderPlaylist, createPlaylist, toggleInPlaylist };
+  return { items, has, toggle, reorderTracks, reorderPlaylist, createPlaylist, toggleInPlaylist, removeFromPlaylist };
 }

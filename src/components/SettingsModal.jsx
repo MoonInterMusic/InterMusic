@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import useSettings, { updateSettings } from '../useSettings';
+import useSettings, { updateSettings, SURFACE_THEMES } from '../useSettings';
 
 const ACCENTS = [
   { name: 'Vermillon', color: '#e04f33' },
@@ -7,6 +7,14 @@ const ACCENTS = [
   { name: 'Sauge', color: '#16a34a' },
   { name: 'Cobalt', color: '#2563eb' },
   { name: 'Pourpre', color: '#c026d3' },
+];
+
+const BTN_COLORS = [
+  { name: 'Corail vif', color: '#ff3b5c' },
+  { name: 'Cyan néon', color: '#06b6d4' },
+  { name: 'Émeraude', color: '#10b981' },
+  { name: 'Or solaire', color: '#f59e0b' },
+  { name: 'Violet', color: '#8b5cf6' },
 ];
 
 export default function SettingsModal({ onClose, onCleared }) {
@@ -28,8 +36,35 @@ export default function SettingsModal({ onClose, onCleared }) {
 
         <div className="st-row">
           <div>
+            <div className="st-label">Couleur d'interface</div>
+            <div className="st-sub">Fond et panneaux de l'app</div>
+          </div>
+          <div className="st-swatches">
+            {Object.entries(SURFACE_THEMES).map(([id, t]) => (
+              <button
+                key={id}
+                className={`st-swatch${s.surface === id ? ' active' : ''}`}
+                style={{ background: t.bg }}
+                title={t.name}
+                aria-label={t.name}
+                onClick={() => updateSettings({ surface: id })}
+              />
+            ))}
+            <input
+              type="color"
+              className="st-color-pick"
+              value={SURFACE_THEMES[s.surface]?.bg || s.surfaceColor || '#0c0c0e'}
+              title="Couleur d'interface personnalisée"
+              aria-label="Couleur d'interface personnalisée"
+              onChange={e => updateSettings({ surface: 'custom', surfaceColor: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="st-row">
+          <div>
             <div className="st-label">Couleur d'accent</div>
-            <div className="st-sub">Personnalise l'interface</div>
+            <div className="st-sub">Surbrillance, titres actifs et barre</div>
           </div>
           <div className="st-swatches">
             {ACCENTS.map(a => (
@@ -42,8 +77,62 @@ export default function SettingsModal({ onClose, onCleared }) {
                 onClick={() => updateSettings({ accent: a.color })}
               />
             ))}
+            <input
+              type="color"
+              className="st-color-pick"
+              value={s.accent}
+              title="Couleur d'accent personnalisée"
+              aria-label="Couleur d'accent personnalisée"
+              onChange={e => updateSettings({ accent: e.target.value })}
+            />
           </div>
         </div>
+
+        <div className="st-row">
+          <div>
+            <div className="st-label">Couleur des boutons</div>
+            <div className="st-sub">Boutons principaux et lecture</div>
+          </div>
+          <div className="st-swatches">
+            <button
+              className={`st-pill${!s.btnColor ? ' active' : ''}`}
+              title="Utiliser la couleur d'accent"
+              onClick={() => updateSettings({ btnColor: '' })}
+            >
+              Accent
+            </button>
+            {BTN_COLORS.map(b => (
+              <button
+                key={b.color}
+                className={`st-swatch${s.btnColor === b.color ? ' active' : ''}`}
+                style={{ background: b.color }}
+                title={b.name}
+                aria-label={b.name}
+                onClick={() => updateSettings({ btnColor: b.color })}
+              />
+            ))}
+            <input
+              type="color"
+              className="st-color-pick"
+              value={s.btnColor || s.accent}
+              title="Couleur de bouton personnalisée"
+              aria-label="Couleur de bouton personnalisée"
+              onChange={e => updateSettings({ btnColor: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <label className="st-row st-check">
+          <div>
+            <div className="st-label">Couleurs vives</div>
+            <div className="st-sub">Sature et illumine les accents, boutons et pochettes</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={!!s.vivid}
+            onChange={e => updateSettings({ vivid: e.target.checked })}
+          />
+        </label>
 
         <label className="st-row st-check">
           <div>

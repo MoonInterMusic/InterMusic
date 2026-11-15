@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { fetchLyrics } from '../api';
-import { Close } from './Icons';
-import useSettings from '../useSettings';
+import { fetchLyrics, fmt } from '../api';
+import { Close, Play, Pause } from './Icons';
+import useSettings, { updateSettings } from '../useSettings';
 
 function parseLrc(lrc) {
   if (!lrc) return [];
@@ -104,9 +104,10 @@ export default function LyricsView({ open, track, yt, onClose, onArtist }) {
   if (!open || !track) return null;
 
   const totalDur = yt.duration || track.duration || 0;
+  const anim = settings.lyricsAnim === 'polaris' ? 'polaris' : 'classic';
 
   return (
-    <section className={`lv${yt.playing ? ' is-playing' : ''}`} aria-label="Paroles en plein écran">
+    <section className={`lv${yt.playing ? ' is-playing' : ''} anim-${anim}`} aria-label="Paroles en plein écran">
       <div className="lv-bg" aria-hidden="true">
         {track.imgUrl && <img key={track.imgUrl} src={track.imgUrl} alt="" />}
       </div>
@@ -115,9 +116,37 @@ export default function LyricsView({ open, track, yt, onClose, onArtist }) {
           <Close size={16} />
           <span>Fermer</span>
         </button>
-        <div className="lv-badge">
-          {yt.playing && <span className="lv-dot" aria-hidden="true" />}
-          {synced.length > 0 ? 'Paroles synchronisées' : plainLines.length > 0 ? 'Paroles non synchronisées' : 'Paroles'}
+        <div className="lv-controls">
+          <button
+            type="button"
+            className="lv-play-btn"
+            onClick={yt.toggle}
+            aria-label={yt.playing ? 'Mettre en pause' : 'Lire'}
+            title={yt.playing ? 'Pause' : 'Lecture'}
+          >
+            {yt.playing ? <Pause size={14} /> : <Play size={14} />}
+            <span>{yt.playing ? 'Pause' : 'Lecture'}</span>
+          </button>
+          <div className="lv-anim-switch" role="group" aria-label="Animation des paroles">
+            <button
+              type="button"
+              className={`lv-anim-btn${anim === 'classic' ? ' active' : ''}`}
+              onClick={() => updateSettings({ lyricsAnim: 'classic' })}
+            >
+              Classique
+            </button>
+            <button
+              type="button"
+              className={`lv-anim-btn${anim === 'polaris' ? ' active' : ''}`}
+              onClick={() => updateSettings({ lyricsAnim: 'polaris' })}
+            >
+              Polaris Mono
+            </button>
+          </div>
+          <div className="lv-badge">
+            {yt.playing && <span className="lv-dot" aria-hidden="true" />}
+            {synced.length > 0 ? 'Paroles synchronisées' : plainLines.length > 0 ? 'Paroles non synchronisées' : 'Paroles'}
+          </div>
         </div>
       </div>
 
@@ -159,7 +188,7 @@ export default function LyricsView({ open, track, yt, onClose, onArtist }) {
               ))}
             </div>
           ) : synced.length > 0 ? (
-            <div className="lv-lines">
+            <div className={`lv-lines lv-lines-${anim}`}>
               {synced.map((line, i) => {
                 const state = i === activeIdx ? 'cur' : i < activeIdx ? 'past' : 'next';
                 let content = line.text;
@@ -167,22 +196,34 @@ export default function LyricsView({ open, track, yt, onClose, onArtist }) {
                   const nextTime = synced[i + 1]?.time ?? (totalDur > line.time ? totalDur : line.time + 4);
                   const dur = Math.max(0.6, nextTime - line.time);
                   const prog = Math.max(0, Math.min(1, (yt.time + 0.25 - line.time) / dur));
-                  const words = line.text.split(/\s+/).filter(Boolean);
-                  const totalChars = words.reduce((s, w) => s + w.length, 0) || 1;
-                  let acc = 0;
-                  content = words.map((w, wi) => {
-                    const start = (acc / totalChars) * 0.92;
-                    acc += w.length;
-                    const end = Math.max(start + 0.04, (acc / totalChars) * 0.92);
-                    const wp = Math.max(0, Math.min(1, (prog - start) / (end - start)));
-                    const cls = wp >= 0.98 ? 'lv-word lit' : wp > 0 ? 'lv-word now' : 'lv-word';
-                    return (
-                      <span key={wi}>
-                        <span className={cls} style={{ '--wp': `${(wp * 100).toFixed(1)}%` }}>{w}</span>
-                        {wi < words.length - 1 ? ' ' : ''}
+                  if (anim === 'polaris') {
+                    const chars = [...line.text];
+                    const litCount = Math.max(1, Math.round(chars.length * Math.min(1, prog * 1.08)));
+                    content = (
+                      <span className="lv-polaris-line">
+                        <span className="lv-polaris-lit">{chars.slice(0, litCount).join('')}</span>
+                        <span className="lv-polaris-cursor" aria-hidden="true">▋</span>
+                        <span className="lv-polaris-dim">{chars.slice(litCount).join('')}</span>
                       </span>
                     );
-                  });
+                  } else {
+                    const words = line.text.split(/\s+/).filter(Boolean);
+                    const totalChars = words.reduce((s, w) => s + w.length, 0) || 1;
+                    let acc = 0;
+                    content = words.map((w, wi) => {
+                      const start = (acc / totalChars) * 0.92;
+                      acc += w.length;
+                      const end = Math.max(start + 0.04, (acc / totalChars) * 0.92);
+                      const wp = Math.max(0, Math.min(1, (prog - start) / (end - start)));
+                      const cls = wp >= 0.98 ? 'lv-word lit' : wp > 0 ? 'lv-word now' : 'lv-word';
+                      return (
+                        <span key={wi}>
+                          <span className={cls} style={{ '--wp': `${(wp * 100).toFixed(1)}%` }}>{w}</span>
+                          {wi < words.length - 1 ? ' ' : ''}
+                        </span>
+                      );
+                    });
+                  }
                 }
                 return (
                   <button
@@ -191,13 +232,14 @@ export default function LyricsView({ open, track, yt, onClose, onArtist }) {
                     className={`lv-line ${state}`}
                     onClick={() => totalDur > 0 && yt.seek(Math.min(1, line.time / totalDur))}
                   >
-                    {content}
+                    {anim === 'polaris' && <span className="lv-ts">{fmt(line.time)}</span>}
+                    <span>{content}</span>
                   </button>
                 );
               })}
             </div>
           ) : plainLines.length > 0 ? (
-            <div className="lv-lines plain">
+            <div className={`lv-lines plain lv-lines-${anim}`}>
               {plainLines.map((line, i) => (
                 <p key={i} className={line.trim() ? 'lv-plain' : 'lv-gap'}>{line}</p>
               ))}

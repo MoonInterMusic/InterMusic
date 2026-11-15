@@ -1,0 +1,51 @@
+{
+  "name": "intermusic",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "app": "vite build && electron .",
+    "dist": "vite build && electron-builder --linux AppImage --win nsis portable"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "electron": "^41.7.1",
+    "electron-builder": "^26.18.0",
+    "vite": "^5.2.0"
+  },
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "fun.intermusic.app",
+    "productName": "InterMusic",
+    "files": [
+      "dist/**",
+      "electron/**"
+    ],
+    "asarUnpack": [
+      "electron/ublock/**"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "MoonInterMusic",
+        "repo": "InterMusic"
+      }
+    ],
+    "linux": {
+      "category": "Audio",
+      "icon": "build/icon.png"
+    },
+    "win": {
+      "icon": "build/icon.ico"
+    }
+  }
+}

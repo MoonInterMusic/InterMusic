@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "app": "vite build && electron .",
-    "dist": "vite build && electron-builder --linux AppImage --win nsis portable"
+    "dist": "vite build && electron-builder --linux AppImage --win portable"
   },
   "dependencies": {
     "electron-updater": "^6.8.11",

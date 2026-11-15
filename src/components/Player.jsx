@@ -115,7 +115,7 @@ export default function Player({ track, yt, onPrev, onNext, hasNext, panel, onPa
             style={{ '--v': `${vol}%` }}
             onChange={e => { setVol(+e.target.value); yt.setVolume(+e.target.value); }} />
         </label>
-        <button className={`pl-btn${eqOpen || (settings.eq || []).some(v => v !== 0) ? ' active' : ''}`} onClick={onEq} aria-label="Égaliseur" title="Égaliseur">
+        <button className={`pl-btn${eqOpen || (settings.eqEnabled !== false && (settings.eq || []).some(v => v !== 0)) ? ' active' : ''}`} onClick={onEq} aria-label="Égaliseur" title="Égaliseur">
           <EqSliders size={18} />
         </button>
         <button className={`pl-btn${lyrics ? ' active' : ''}`} onClick={onLyrics} disabled={!track} aria-label="Paroles" title="Paroles">

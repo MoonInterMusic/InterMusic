@@ -8,6 +8,7 @@ const DEFAULTS = {
   bassShake: true,
   bassPower: 100,
   reduceMotion: false,
+  eqEnabled: true,
   eq: [0, 0, 0, 0, 0],
 };
 
@@ -23,7 +24,7 @@ function apply(s) {
     document.documentElement.style.setProperty('--bx', '0px');
     document.documentElement.style.setProperty('--by', '0px');
   }
-  window.dispatchEvent(new CustomEvent('intermusic-eq', { detail: s.eq }));
+  window.dispatchEvent(new CustomEvent('intermusic-eq', { detail: { eq: s.eq, enabled: s.eqEnabled !== false } }));
   window.api?.setSettings?.({ miniPlayer: s.miniPlayer }).catch?.(() => {});
 }
 apply(state);

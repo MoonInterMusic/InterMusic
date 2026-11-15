@@ -63,7 +63,8 @@ export default function PlaylistPicker({ onToast }) {
           </button>
 
           {items.playlist.map(pl => {
-            const inPl = pl.tracks.some(t => t.id === track.id);
+            const list = pl.tracks || [];
+            const inPl = list.some(t => t.id === track.id);
             return (
               <button
                 key={pl.id}
@@ -79,7 +80,7 @@ export default function PlaylistPicker({ onToast }) {
                 </span>
                 <span className="pp-meta">
                   <span className="pp-name">{pl.name}</span>
-                  <span className="pp-count">{pl.tracks.length} titre{pl.tracks.length > 1 ? 's' : ''}</span>
+                  <span className="pp-count">{list.length} titre{list.length > 1 ? 's' : ''}</span>
                 </span>
                 <span className="pp-state">{inPl ? 'Ajouté ✓' : 'Ajouter'}</span>
               </button>

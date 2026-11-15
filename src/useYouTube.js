@@ -96,10 +96,11 @@ export default function useYouTube(containerRef, { onEnded, onFail }) {
       document.documentElement.style.setProperty('--by', '0px');
     };
 
-    const applyEq = eq => {
+    const applyEq = detail => {
       if (!actx || !filters.length) return;
-      const vals = Array.isArray(eq) ? eq : [0, 0, 0, 0, 0];
-      filters.forEach((f, i) => f.gain.setTargetAtTime(Number(vals[i]) || 0, actx.currentTime, 0.02));
+      const enabled = detail?.enabled !== false;
+      const vals = Array.isArray(detail?.eq) ? detail.eq : Array.isArray(detail) ? detail : [0, 0, 0, 0, 0];
+      filters.forEach((f, i) => f.gain.setTargetAtTime(enabled ? (Number(vals[i]) || 0) : 0, actx.currentTime, 0.02));
     };
 
     const onEq = e => applyEq(e.detail);
@@ -113,13 +114,15 @@ export default function useYouTube(containerRef, { onEnded, onFail }) {
         actx = new AC();
         const src = actx.createMediaElementSource(a);
         const freqs = [60, 230, 910, 3600, 14000];
-        const eq = getSettings().eq || [0, 0, 0, 0, 0];
+        const st = getSettings();
+        const eq = st.eq || [0, 0, 0, 0, 0];
+        const on = st.eqEnabled !== false;
         filters = freqs.map((freq, i) => {
           const f = actx.createBiquadFilter();
           f.type = i === 0 ? 'lowshelf' : i === freqs.length - 1 ? 'highshelf' : 'peaking';
           f.frequency.value = freq;
           f.Q.value = 1;
-          f.gain.value = Number(eq[i]) || 0;
+          f.gain.value = on ? (Number(eq[i]) || 0) : 0;
           return f;
         });
         analyser = actx.createAnalyser();

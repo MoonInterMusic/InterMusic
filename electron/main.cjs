@@ -1,6 +1,5 @@
 // InterMusic desktop: Deezer metadata + YouTube video search over IPC.
 const { app, BrowserWindow, ipcMain, shell, session, screen, dialog } = require('electron');
-const { autoUpdater } = require('electron-updater');
 const { registerSetupIpc } = require('./setup.cjs');
 const http = require('http');
 const fs = require('fs');
@@ -387,12 +386,14 @@ function ensureMini() {
   return miniWin;
 }
 
+const ICON = path.join(__dirname, '..', 'build', 'icon.png');
+
 async function createWindow() {
   if (IS_SETUP) {
     const win = new BrowserWindow({
       width: 540, height: 430, resizable: false, frame: false,
       title: 'InterMusic Setup', backgroundColor: '#0c0c0e',
-      icon: path.join(__dirname, '..', 'build', 'icon.png'),
+      ...(fs.existsSync(ICON) ? { icon: ICON } : {}),
       webPreferences: { preload: path.join(__dirname, 'preload.cjs') },
     });
     mainWin = win;
@@ -405,7 +406,7 @@ async function createWindow() {
     width: 1280, height: 820, minWidth: 900, minHeight: 600,
     frame: false,
     title: 'InterMusic', backgroundColor: '#0c0c0e', autoHideMenuBar: true,
-    icon: path.join(__dirname, '..', 'build', 'icon.png'),
+    ...(fs.existsSync(ICON) ? { icon: ICON } : {}),
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), webviewTag: true },
   });
   mainWin = win;
@@ -435,9 +436,15 @@ async function createWindow() {
   });
 }
 
-if (!app.requestSingleInstanceLock()) app.quit();
+if (!IS_SETUP && !app.requestSingleInstanceLock()) app.quit();
 else {
-  app.on('second-instance', () => BrowserWindow.getAllWindows()[0]?.focus());
+  app.on('second-instance', () => {
+    const w = BrowserWindow.getAllWindows()[0];
+    if (!w) return;
+    if (w.isMinimized()) w.restore();
+    w.show();
+    w.focus();
+  });
   app.whenReady().then(async () => {
     const ublockDir = path.join(__dirname, 'ublock').replace('app.asar', 'app.asar.unpacked');
     try {
@@ -454,23 +461,32 @@ else {
       cb({ responseHeaders: headers });
     });
     createWindow();
-    if (app.isPackaged) {
-      autoUpdater.autoDownload = true;
-      autoUpdater.autoInstallOnAppQuit = true;
-      autoUpdater.on('error', () => {});
-      autoUpdater.on('update-downloaded', info => {
-        dialog.showMessageBox(mainWin, {
-          type: 'info',
-          title: 'Mise à jour disponible',
-          message: `InterMusic ${info.version} est prêt.`,
-          detail: 'La mise à jour sera installée automatiquement à la fermeture, ou maintenant en redémarrant.',
-          buttons: ['Redémarrer maintenant', 'Plus tard'],
-          defaultId: 0,
-        }).then(({ response }) => {
-          if (response === 0) autoUpdater.quitAndInstall();
-        }).catch(() => {});
-      });
-      autoUpdater.checkForUpdates().catch(() => {});
+    const canAutoUpdate = app.isPackaged && !IS_SETUP
+      && fs.existsSync(path.join(process.resourcesPath, 'app-update.yml'))
+      && (process.platform !== 'linux' || !!process.env.APPIMAGE);
+    if (canAutoUpdate) {
+      setTimeout(() => {
+        try {
+          const { autoUpdater } = require('electron-updater');
+          autoUpdater.autoDownload = true;
+          autoUpdater.autoInstallOnAppQuit = true;
+          autoUpdater.on('error', () => {});
+          autoUpdater.on('update-downloaded', info => {
+            if (!mainWin || mainWin.isDestroyed()) return;
+            dialog.showMessageBox(mainWin, {
+              type: 'info',
+              title: 'Mise à jour disponible',
+              message: `InterMusic ${info.version} est prêt.`,
+              detail: 'La mise à jour sera installée automatiquement à la fermeture, ou maintenant en redémarrant.',
+              buttons: ['Redémarrer maintenant', 'Plus tard'],
+              defaultId: 0,
+            }).then(({ response }) => {
+              if (response === 0) autoUpdater.quitAndInstall();
+            }).catch(() => {});
+          });
+          autoUpdater.checkForUpdates().catch(() => {});
+        } catch {}
+      }, 3000).unref();
     }
   });
   app.on('window-all-closed', () => {

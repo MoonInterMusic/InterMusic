@@ -27,4 +27,13 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('mini-action', fn);
     return () => ipcRenderer.removeListener('mini-action', fn);
   },
+  setupInfo: () => ipcRenderer.invoke('setup-info'),
+  setupPickDir: () => ipcRenderer.invoke('setup-pick-dir'),
+  setupInstall: opts => ipcRenderer.invoke('setup-install', opts),
+  setupLaunch: () => ipcRenderer.invoke('setup-launch'),
+  onSetupProgress: cb => {
+    const fn = (_, p) => cb(p);
+    ipcRenderer.on('setup-progress', fn);
+    return () => ipcRenderer.removeListener('setup-progress', fn);
+  },
 });

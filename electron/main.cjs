@@ -1,6 +1,8 @@
 // InterMusic desktop: Deezer metadata + YouTube video search over IPC.
 const { app, BrowserWindow, ipcMain, shell, session, screen, dialog } = require('electron');
 const { autoUpdater } = require('electron-updater');
+const { registerSetupIpc } = require('./setup.cjs');
+const IS_SETUP = process.argv.includes('--setup') || process.env.INTERMUSIC_SETUP === '1';
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -385,6 +387,19 @@ function ensureMini() {
 }
 
 async function createWindow() {
+  if (IS_SETUP) {
+    const win = new BrowserWindow({
+      width: 540, height: 430, resizable: false, frame: false,
+      title: 'InterMusic Setup', backgroundColor: '#0c0c0e',
+      icon: path.join(__dirname, '..', 'build', 'icon.png'),
+      webPreferences: { preload: path.join(__dirname, 'preload.cjs') },
+    });
+    mainWin = win;
+    registerSetupIpc(() => mainWin);
+    activeBaseUrl = app.isPackaged ? `http://127.0.0.1:${await serve()}` : 'http://localhost:5173';
+    win.loadURL(`${activeBaseUrl}?setup=1`);
+    return;
+  }
   const win = new BrowserWindow({
     width: 1280, height: 820, minWidth: 900, minHeight: 600,
     frame: false,

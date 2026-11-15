@@ -461,32 +461,28 @@ else {
       cb({ responseHeaders: headers });
     });
     createWindow();
-    const canAutoUpdate = app.isPackaged && !IS_SETUP
-      && fs.existsSync(path.join(process.resourcesPath, 'app-update.yml'))
-      && (process.platform !== 'linux' || !!process.env.APPIMAGE);
-    if (canAutoUpdate) {
-      setTimeout(() => {
+    if (app.isPackaged && !IS_SETUP) {
+      setTimeout(async () => {
         try {
-          const { autoUpdater } = require('electron-updater');
-          autoUpdater.autoDownload = true;
-          autoUpdater.autoInstallOnAppQuit = true;
-          autoUpdater.on('error', () => {});
-          autoUpdater.on('update-downloaded', info => {
-            if (!mainWin || mainWin.isDestroyed()) return;
-            dialog.showMessageBox(mainWin, {
-              type: 'info',
-              title: 'Mise à jour disponible',
-              message: `InterMusic ${info.version} est prêt.`,
-              detail: 'La mise à jour sera installée automatiquement à la fermeture, ou maintenant en redémarrant.',
-              buttons: ['Redémarrer maintenant', 'Plus tard'],
-              defaultId: 0,
-            }).then(({ response }) => {
-              if (response === 0) autoUpdater.quitAndInstall();
-            }).catch(() => {});
+          const r = await fetchT('https://api.github.com/repos/MoonInterMusic/InterMusic/releases/latest', {
+            headers: { 'User-Agent': 'InterMusic' },
+          }, 6000);
+          if (!r.ok) return;
+          const rel = await r.json();
+          const latest = String(rel.tag_name || '').replace(/^v/, '');
+          const cur = app.getVersion();
+          const cmp = (a, b) => a.split('.').map(Number).reduce((acc, v, i) => acc || (v - (b.split('.').map(Number)[i] || 0)), 0);
+          if (!latest || cmp(latest, cur) <= 0 || !mainWin || mainWin.isDestroyed()) return;
+          const { response } = await dialog.showMessageBox(mainWin, {
+            type: 'info',
+            title: 'Mise à jour disponible',
+            message: `InterMusic v${latest} est disponible (actuelle : v${cur}).`,
+            buttons: ['Télécharger', 'Plus tard'],
+            defaultId: 0,
           });
-          autoUpdater.checkForUpdates().catch(() => {});
+          if (response === 0 && rel.html_url) shell.openExternal(rel.html_url);
         } catch {}
-      }, 3000).unref();
+      }, 4000).unref();
     }
   });
   app.on('window-all-closed', () => {

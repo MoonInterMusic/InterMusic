@@ -213,7 +213,7 @@ nav {
 
 /* ── Hero ── */
 #hero {
-  position: relative; height: clamp(430px, 66vh, 580px); overflow: hidden;
+  position: relative; height: clamp(450px, 66vh, 580px); overflow: hidden;
   border-bottom: 1px solid var(--border);
 }
 .hero-empty { display: grid; padding: 24px var(--gutter); }
@@ -237,7 +237,7 @@ nav {
 .hero-content {
   position: relative; z-index: 1; height: 100%;
   display: flex; align-items: center; gap: clamp(32px, 5vw, 76px);
-  padding: 0 var(--gutter) 28px;
+  padding: 20px var(--gutter) 28px;
   max-width: 1360px; margin: 0 auto;
 }
 .hero-art {

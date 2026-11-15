@@ -1,6 +1,6 @@
 {
   "name": "intermusic",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Lecteur de musique desktop sous Electron",
   "author": "MoonInterMusic",
   "type": "module",
@@ -11,7 +11,6 @@
     "dist": "vite build && electron-builder --linux AppImage --win nsis"
   },
   "dependencies": {
-    "electron-updater": "^6.8.11",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

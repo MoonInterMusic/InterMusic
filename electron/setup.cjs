@@ -59,7 +59,7 @@ function registerSetupIpc(getWin) {
       const assets = rel.assets || [];
       const asset = process.platform === 'win32'
         ? assets.find(a => a.name.endsWith('.exe') && !a.name.includes('Setup')) || assets.find(a => a.name.endsWith('.exe'))
-        : assets.find(a => a.name.endsWith('.AppImage'));
+        : assets.find(a => a.name.endsWith('.AppImage') && !a.name.includes('Setup')) || assets.find(a => a.name.endsWith('.AppImage'));
       if (!asset) throw new Error('Binaire introuvable pour cette plateforme.');
 
       send(12, `Téléchargement de ${asset.name}…`);

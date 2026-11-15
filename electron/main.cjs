@@ -2,12 +2,12 @@
 const { app, BrowserWindow, ipcMain, shell, session, screen, dialog } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const { registerSetupIpc } = require('./setup.cjs');
-const EXE_NAME = path.basename(process.env.APPIMAGE || process.execPath).toLowerCase();
-const IS_SETUP = process.argv.includes('--setup') || process.env.INTERMUSIC_SETUP === '1' || EXE_NAME.includes('setup');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const discord = require('./discord.cjs');
+const EXE_NAME = path.basename(process.env.APPIMAGE || process.execPath).toLowerCase();
+const IS_SETUP = process.argv.includes('--setup') || process.env.INTERMUSIC_SETUP === '1' || EXE_NAME.includes('setup');
 
 // Fixed port: the YouTube embed needs an http origin, and localStorage ("Ma liste") is tied to it.
 const PORT = 47831;

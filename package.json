@@ -39,7 +39,8 @@
       {
         "provider": "github",
         "owner": "MoonInterMusic",
-        "repo": "InterMusic"
+        "repo": "InterMusic",
+        "releaseType": "release"
       }
     ],
     "linux": {

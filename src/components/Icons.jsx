@@ -63,3 +63,19 @@ export const Trash = ({ size = 15 }) => (
     <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
   </svg>
 );
+
+export const Shuffle = ({ size = 15 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" />
+  </svg>
+);
+
+export const FlowIcon = ({ size = 17 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M2 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0" />
+    <path d="M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity=".55" />
+    <path d="M2 7c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity=".55" />
+  </svg>
+);

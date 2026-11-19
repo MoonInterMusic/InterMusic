@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Play } from './Icons';
+import { Play, FlowIcon } from './Icons';
 
-export default function Hero({ items, onPick, spinning }) {
+export default function Hero({ items, onPick, onFlow, flowLoading, spinning }) {
   const [cur, setCur] = useState(0);
 
   useEffect(() => {
@@ -27,9 +27,17 @@ export default function Hero({ items, onPick, spinning }) {
               <span className="hero-eyebrow">N°{i + 1} · {item.type || 'Album'}{item.year ? ` · ${item.year}` : ''}</span>
               <h1 className="hero-title">{item.name}</h1>
               <div className="hero-artist">{item.artist}</div>
-              <button className="hero-btn" onClick={() => onPick(item)} tabIndex={i === cur ? 0 : -1}>
-                <Play size={18} /> Écouter l'album
-              </button>
+              <div className="hero-actions">
+                <button className="hero-btn" onClick={() => onPick(item)} tabIndex={i === cur ? 0 : -1}>
+                  <Play size={18} /> Écouter l'album
+                </button>
+                {onFlow && (
+                  <button className="hero-flow" onClick={onFlow} disabled={flowLoading} tabIndex={i === cur ? 0 : -1} title="Mix infini adapté à tes goûts">
+                    <FlowIcon size={18} />
+                    <span>{flowLoading ? 'Préparation…' : 'Lancer mon Flow'}</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

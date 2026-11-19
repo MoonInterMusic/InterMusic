@@ -16,7 +16,73 @@ import ImportModal from './components/ImportModal';
 import SettingsModal from './components/SettingsModal';
 import PlaylistPicker from './components/PlaylistPicker';
 import EqualizerModal from './components/EqualizerModal';
-import { Play } from './components/Icons';
+import { Play, Shuffle } from './components/Icons';
+
+const trackKey = t => String(t?.id || `${t?.name || ''}::${t?.artist || ''}`).toLowerCase();
+
+function shuffleUnique(list, excludeKeys = new Set()) {
+  const seen = new Set(excludeKeys);
+  const out = [];
+  for (const t of list || []) {
+    if (!t) continue;
+    const k = trackKey(t);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+async function fetchRelatedTracks(seedTracks, excludeKeys) {
+  const byArtist = new Map();
+  for (const t of shuffleUnique(seedTracks)) {
+    const k = (t.artistId || t.artist || '').toLowerCase();
+    if (k && !byArtist.has(k)) byArtist.set(k, t);
+    if (byArtist.size >= 3) break;
+  }
+
+  const candidates = [];
+  await Promise.allSettled([...byArtist.values()].map(async t => {
+    let aid = t.artistId;
+    if (!aid && t.artist) {
+      try {
+        const res = await getJSON(`/search/artist?q=${encodeURIComponent(t.artist)}&limit=1`);
+        aid = res?.data?.[0]?.id ? String(res.data[0].id) : '';
+      } catch {}
+    }
+    if (aid) {
+      const [relRes, topRes] = await Promise.allSettled([
+        getJSON(`/artist/${aid}/related?limit=8`),
+        getJSON(`/artist/${aid}/top?limit=6`),
+      ]);
+      if (topRes.status === 'fulfilled') {
+        candidates.push(...(topRes.value?.data || []).map(mapDzTrack));
+      }
+      const relArtists = relRes.status === 'fulfilled' ? (relRes.value?.data || []) : [];
+      const picked = shuffleUnique(relArtists.map(a => ({ id: a.id, name: a.name }))).slice(0, 2);
+      await Promise.allSettled(picked.map(async ra => {
+        const r = await getJSON(`/artist/${ra.id}/top?limit=6`);
+        candidates.push(...(r?.data || []).map(mapDzTrack));
+      }));
+    } else if (t.artist) {
+      const r = await getJSON(`/search/track?q=${encodeURIComponent(t.artist)}&limit=8`);
+      candidates.push(...(r?.data || []).map(mapDzTrack));
+    }
+  }));
+
+  let mixed = shuffleUnique(candidates, excludeKeys);
+  if (!mixed.length) {
+    try {
+      const chart = await getJSON('/chart/0/tracks?limit=25');
+      mixed = shuffleUnique((chart?.data || []).map(mapDzTrack), excludeKeys);
+    } catch {}
+  }
+  return mixed.slice(0, 20);
+}
 
 function Section({ id, title, kicker, children }) {
   return (
@@ -46,12 +112,15 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [eqOpen, setEqOpen] = useState(false);
   const [openPlId, setOpenPlId] = useState(null);
+  const [flowLoading, setFlowLoading] = useState(false);
   const { items: liked, has, toggle, reorderTracks, reorderPlaylist, removeFromPlaylist } = useList();
   const openPl = openPlId ? liked.playlist.find(p => p.id === openPlId) || null : null;
   const toastTimer = useRef(null);
   const videoRef = useRef(null);
   const reqId = useRef(0);
   const nav = useRef({});
+  const autoThemeRef = useRef(null);
+  const extendingRef = useRef(false);
 
   const showToast = useCallback(msg => {
     setToast(msg);
@@ -82,15 +151,78 @@ export default function App() {
   }, [yt.load, showToast]);
 
   nav.current = {
-    next: () => index + 1 < queue.length && playAt(queue, index + 1),
+    next: async () => {
+      if (index + 1 < queue.length) return playAt(queue, index + 1);
+      if (!autoThemeRef.current || extendingRef.current) return;
+      extendingRef.current = true;
+      try {
+        const exclude = new Set(queue.map(trackKey));
+        const more = await fetchRelatedTracks(autoThemeRef.current.tracks, exclude);
+        if (more.length) {
+          const nextQ = [...queue, ...more];
+          autoThemeRef.current = { tracks: more };
+          showToast('Continuation sur le même thème');
+          playAt(nextQ, queue.length);
+        }
+      } finally {
+        extendingRef.current = false;
+      }
+    },
     prev: () => (yt.time > 3 || index <= 0 ? yt.seek(0) : playAt(queue, index - 1)),
   };
+
+  function startPlaylist(list, shuffled = false) {
+    const next = shuffled ? shuffleUnique(list) : list;
+    if (!next.length) return;
+    autoThemeRef.current = { tracks: next };
+    playAt(next, 0);
+    if (shuffled) showToast('Lecture aléatoire activée');
+  }
+
+  async function startFlow() {
+    if (flowLoading) return;
+    setFlowLoading(true);
+    try {
+      const seeds = [...liked.track, ...liked.playlist.flatMap(p => p.tracks || [])];
+      let flowList = [];
+      if (seeds.length) {
+        const related = await fetchRelatedTracks(seeds, new Set());
+        const favSample = shuffleUnique(seeds).slice(0, 8);
+        flowList = shuffleUnique([...favSample, ...related]);
+      } else {
+        const g1 = GENRES[Math.floor(Math.random() * GENRES.length)];
+        const g2 = GENRES[Math.floor(Math.random() * GENRES.length)];
+        const [c0, c1, c2] = await Promise.allSettled([
+          getJSON('/chart/0/tracks?limit=25'),
+          getJSON(`/chart/${g1.id}/tracks?limit=15`),
+          getJSON(`/chart/${g2.id}/tracks?limit=15`),
+        ]);
+        const pool = [
+          ...(c0.status === 'fulfilled' ? c0.value?.data || [] : []),
+          ...(c1.status === 'fulfilled' ? c1.value?.data || [] : []),
+          ...(c2.status === 'fulfilled' ? c2.value?.data || [] : []),
+        ].map(mapDzTrack);
+        flowList = shuffleUnique(pool);
+      }
+      if (!flowList.length) return showToast('Impossible de lancer le Flow');
+      autoThemeRef.current = { tracks: flowList };
+      playAt(flowList, 0);
+      showToast('Flow lancé — mix continu');
+    } catch {
+      showToast('Impossible de lancer le Flow');
+    } finally {
+      setFlowLoading(false);
+    }
+  }
 
   async function playTracks(path, override) {
     try {
       const data = await getJSON(path);
       const list = (data?.data || []).map(r => ({ ...mapDzTrack(r), ...override }));
-      if (list.length) return playAt(list, 0);
+      if (list.length) {
+        autoThemeRef.current = null;
+        return playAt(list, 0);
+      }
     } catch {}
     showToast('Impossible de charger les morceaux');
   }
@@ -204,14 +336,15 @@ export default function App() {
             <h1 className="pl-title">{openPl.name}</h1>
             <span className="pl-count">{openPl.tracks.length} titres</span>
             <div className="pl-actions">
-              <button className="btn primary" onClick={() => playAt(openPl.tracks, 0)}><Play size={16} /> Écouter</button>
+              <button className="btn primary" onClick={() => startPlaylist(openPl.tracks, false)} disabled={!openPl.tracks.length}><Play size={16} /> Écouter</button>
+              <button className="btn ghost" onClick={() => startPlaylist(openPl.tracks, true)} disabled={!openPl.tracks.length}><Shuffle size={15} /> Lecture aléatoire</button>
               <button className="btn ghost" onClick={() => setOpenPlId(null)}>Retour</button>
               <button className="btn ghost danger" onClick={() => { toggle('playlist', openPl); setOpenPlId(null); showToast('Playlist supprimée'); }}>Supprimer</button>
             </div>
           </div>
         </header>
         <TrackList tracks={openPl.tracks} currentId={current?.id} playing={yt.playing}
-          onPick={i => playAt(openPl.tracks, i)}
+          onPick={i => { autoThemeRef.current = { tracks: openPl.tracks }; playAt(openPl.tracks, i); }}
           onReorder={(from, to) => reorderPlaylist(openPl.id, from, to)}
           onRemove={i => { removeFromPlaylist(openPl.id, i); showToast('Titre retiré de la playlist'); }} />
       </main>
@@ -225,16 +358,20 @@ export default function App() {
               items={liked.playlist.map(p => ({ ...p, artist: `${p.source} · ${p.tracks.length} titres` }))} />
           </>}
           {liked.album.length > 0 && <><h3 className="sub-title">Albums</h3><Carousel items={liked.album} onPick={playAlbum} /></>}
-          {liked.track.length > 0 && <><h3 className="sub-title">Titres</h3>
+          {liked.track.length > 0 && <>
+            <div className="sub-head">
+              <h3 className="sub-title">Titres</h3>
+              <button className="btn ghost" onClick={() => startPlaylist(liked.track, true)}><Shuffle size={15} /> Lecture aléatoire</button>
+            </div>
             <TrackList tracks={liked.track} currentId={current?.id} playing={yt.playing}
-              onPick={i => playAt(liked.track, i)}
+              onPick={i => startPlaylist(liked.track.slice(i).concat(liked.track.slice(0, i)), false)}
               onReorder={reorderTracks} /></>}
           {!liked.album.length && !liked.track.length && !liked.playlist.length &&
             <p className="empty">Clique sur ♥ pour ajouter des titres ou des albums, ou importe une playlist.</p>}
         </Section>
       </main>
       ) : (<>
-      <Hero items={albums.slice(0, 7)} onPick={playAlbum} spinning={yt.playing} />
+      <Hero items={albums.slice(0, 7)} onPick={playAlbum} onFlow={startFlow} flowLoading={flowLoading} spinning={yt.playing} />
       <main className="view">
         <Section id="albums" kicker="Cette semaine" title="Top albums">
           <Carousel items={albums} onPick={playAlbum} loading={!albums.length} />

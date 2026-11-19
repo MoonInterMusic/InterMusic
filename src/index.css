@@ -322,8 +322,8 @@ nav:not(:hover):not(:has(.nav-search input:focus)) .nav-note { display: none; }
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .hero-artist { font-size: clamp(15px, 1.5vw, 18px); color: var(--text2); font-weight: 500; }
+.hero-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 .hero-btn {
-  margin-top: 8px;
   display: inline-flex; align-items: center; gap: 10px;
   padding: 12px 22px; border-radius: var(--radius);
   background: var(--btn-bg); color: var(--btn-text); font-weight: 600; font-size: 14px;
@@ -331,6 +331,23 @@ nav:not(:hover):not(:has(.nav-search input:focus)) .nav-note { display: none; }
 }
 .hero-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .hero-btn:active { transform: scale(.98); }
+.hero-flow {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 12px 20px; border-radius: var(--radius);
+  background: rgba(20, 20, 24, .72); backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border-strong));
+  color: var(--text); font-weight: 600; font-size: 14px;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 18%, transparent);
+  transition: border-color .18s, background .18s, transform .16s var(--ease), box-shadow .2s;
+}
+.hero-flow svg { color: var(--accent); }
+.hero-flow:hover:not(:disabled) {
+  background: rgba(28, 28, 34, .88); border-color: var(--accent);
+  box-shadow: 0 0 26px color-mix(in srgb, var(--accent) 34%, transparent);
+  transform: translateY(-1px);
+}
+.hero-flow:disabled { opacity: .65; cursor: wait; }
+.sub-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .hero-dots {
   position: absolute; z-index: 2; bottom: 22px; right: var(--gutter);
   display: flex; gap: 6px;
